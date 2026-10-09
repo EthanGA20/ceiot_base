@@ -19,4 +19,4 @@ const render = function render(template, vars) {
        return line;
    }).join('\n');	
 }
-module.exports = render;
+export default render;

@@ -1,11 +1,11 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const {MongoClient} = require("mongodb");
-const PgMem = require("pg-mem");
+import express from "express";
+import { urlencoded } from "body-parser";
+import { MongoClient } from "mongodb";
+import { newDb } from "pg-mem";
 
-const db = PgMem.newDb();
+const db = newDb();
 
-    const render = require("./render.js");
+    import render from "./render.js";
 // Measurements database setup and access
 
 let database = null;
@@ -27,19 +27,39 @@ async function insertMeasurement(message) {
     return insertedId;
 }
 
-async function getMeasurements() {
+/*async function getMeasurements() {
     return await database.collection(collectionName).find({}).toArray();	
 }
+    */
 
 // API Server
 
 const app = express();
 
-app.use(bodyParser.urlencoded({extended:false}));
+app.use(urlencoded({extended:false}));
 
+//app.use('spa/static');
 app.use(express.static('spa/static'));
 
+app.use(express.json());
+
+app.use((req, res, next) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ${req.method} ${req.url}`)
+    next();
+})
+
 const PORT = 8080;
+
+const router = express.Router();
+
+let measurement = [
+    {id:'00', t:'18', h:'78'},
+    {id:'00', t:'19', h:'77'},
+    {id:'00', t:'77', h:'77'},
+    {id:'01', t:'77', h:'77'}
+]
+
 
 app.post('/measurement', function (req, res) {
 -       console.log("device id    : " + req.body.id + " key         : " + req.body.key + " temperature : " + req.body.t + " humidity    : " + req.body.h);	
@@ -91,10 +111,10 @@ app.get('/web/device/:id', function (req,res) {
 
 
 app.get('/term/device/:id', function (req, res) {
-    var red = "\33[31m";
-    var green = "\33[32m";
-    var blue = "\33[33m";
-    var reset = "\33[0m";
+    var red = "\x1b[31m";
+    var green = "\x1b[32m";
+    var blue = "\x1b[33m";
+    var reset = "\x1b[0m";
     var template = "Device name " + red   + "   {{name}}" + reset + "\n" +
 		   "       id   " + green + "       {{ id }} " + reset +"\n" +
 	           "       key  " + blue  + "  {{ key }}" + reset +"\n";
@@ -104,14 +124,14 @@ app.get('/term/device/:id', function (req, res) {
 });
 
 app.get('/measurement', async (req,res) => {
-    res.send(await getMeasurements());
+    res.json(measurement);
 });
 
 app.get('/device', function(req,res) {
     res.send( db.public.many("SELECT * FROM devices") );
 });
 
-startDatabase().then(async() => {
+/*startDatabase().then(async() => {
 
     const addAdminEndpoint = require("./admin.js");
     addAdminEndpoint(app, render);
@@ -132,6 +152,10 @@ startDatabase().then(async() => {
     console.log("sql device database up");
 
     app.listen(PORT, () => {
-        console.log(`Listening at ${PORT}`);
+        console.log(`Server is running on http://localhost:${PORT}`);
     });
-});
+});*/
+
+app.listen(PORT, () => {
+        console.log(`Server is running on http://localhost:${PORT}`);
+    })
