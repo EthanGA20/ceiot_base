@@ -13,6 +13,7 @@ export class ViewMainPage {
             <span class="title">${device.name}</span>
             <p>id: ${device.device_id}</p>
             <p>key: ${device.key}</p>
+            <p>time: ${device.createdAt}</p>
           </li>  
           `;
       }

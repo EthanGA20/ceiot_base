@@ -10,9 +10,15 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "body-parser": "^2.3.0",
+    "dotenv": "^18.0.7",
+    "drizzle-orm": "^0.45.4",
     "express": "^5.2.1",
     "mongodb": "^7.5.0",
     "pg-mem": "^3.0.14"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.11"
   }
 }

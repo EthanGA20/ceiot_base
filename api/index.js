@@ -2,8 +2,9 @@ import express from "express";
 import { urlencoded } from "body-parser";
 import { MongoClient } from "mongodb";
 import { newDb } from "pg-mem";
-
-const db = newDb();
+import {devices} from './schema.js'
+import {db} from './db.js';
+//const db = newDb();
 
     import render from "./render.js";
 // Measurements database setup and access
@@ -67,17 +68,21 @@ app.post('/measurement', function (req, res) {
 	res.send("received measurement into " +  insertedId);
 });
 
-app.post('/device', function (req, res) {
-	console.log("device id    : " + req.body.id + " name        : " + req.body.n + " key         : " + req.body.k );
+app.post('/device', async (req, res) => {
+    const {name, key} = req.body;
+    if (!name || !key){
+        return res.status(400).json({error: 'Missing fields'});
+    }
 
-    db.public.none("INSERT INTO devices VALUES ('"+req.body.id+ "', '"+req.body.n+"', '"+req.body.k+"')");
-	res.send("received new device");
+    const [newDevice] = await db.insert(devices).values({name, key}).returning();
+    res.status(200).json(newDevice);
 });
 
 
-app.get('/web/device', function (req, res) {
-	var devices = db.public.many("SELECT * FROM devices").map( function(device) {
-		console.log(device);
+/*app.get('/web/device', function (req, res) {
+    const result = db.select().from(devices).map( function(device) {
+	//const devices = db.public.many("SELECT * FROM devices").map( function(device) {
+		console.log(result);
 		return '<tr><td><a href=/web/device/'+ device.device_id +'>' + device.device_id + "</a>" +
 			       "</td><td>"+ device.name+"</td><td>"+ device.key+"</td></tr>";
 	   }
@@ -87,10 +92,40 @@ app.get('/web/device', function (req, res) {
 		     "<body>" +
 		        "<table border=\"1\">" +
 		           "<tr><th>id</th><th>name</th><th>key</th></tr>" +
-		           devices +
+		           result +
 		        "</table>" +
 		     "</body>" +
 		"</html>");
+});*/
+app.get('/web/device', async function (req, res) {
+    try {
+        const devicesList = await db.select().from(devices);
+
+        const result = devicesList.map(function (device) {
+            console.log(device);
+
+            return '<tr><td><a href="/web/device/' + device.device_id + '">' +
+                device.device_id + '</a>' +
+                '</td><td>' + device.name +
+                '</td><td>' + device.key + 
+                '</td><td>' + device.createdAt +'</td></tr>';
+        });
+
+        res.send(
+            "<html>" +
+            "<head><title>Sensores</title></head>" +
+            "<body>" +
+            "<table border=\"1\">" +
+            "<tr><th>id</th><th>name</th><th>key</th><th>createdAt</th></tr>" +
+            result.join('') +
+            "</table>" +
+            "</body>" +
+            "</html>"
+        );
+    } catch (error) {
+        console.error("Error al consultar los dispositivos:", error);
+        res.status(500).send("Error al consultar los dispositivos");
+    }
 });
 
 app.get('/web/device/:id', function (req,res) {
@@ -127,8 +162,9 @@ app.get('/measurement', async (req,res) => {
     res.json(measurement);
 });
 
-app.get('/device', function(req,res) {
-    res.send( db.public.many("SELECT * FROM devices") );
+app.get('/device', async function(req,res) {
+    const devicesList = await db.select().from(devices);
+    res.send(devicesList);
 });
 
 /*startDatabase().then(async() => {

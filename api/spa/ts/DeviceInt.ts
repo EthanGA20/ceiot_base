@@ -1,5 +1,6 @@
 export interface DeviceInt {
-  device_id:string;
+  device_id:number;
   name: string;
   key:string;
+  createdAt: string;
 }
