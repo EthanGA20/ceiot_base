@@ -25,7 +25,7 @@
 
 #define SERVER_URL      "http://192.168.1.101:8080/measurement"
 
-#define DEVICE_ID "01"
+#define DEVICE_ID "1"
 
 #define WIFI_CONNECTED_BIT BIT0
 
@@ -232,9 +232,9 @@ static void http_get(void)
  * --------------------------------------------------------- */
 
 
-static char *POST_DATA_TEMPLATE = "id="DEVICE_ID"&t=%0.2f&h=%0.2f";
+//static char *POST_DATA_TEMPLATE = "id="DEVICE_ID"&t=%0.2f&h=%0.2f";
 
-static void http_post(float *pressure, float *temperature, float *humidity) {
+/*static void http_post(float *pressure, float *temperature, float *humidity) {
 
     char post_data[64];
 
@@ -282,6 +282,44 @@ static void http_post(float *pressure, float *temperature, float *humidity) {
         ESP_LOGE(TAG,
                  "POST failed: %s",
                  esp_err_to_name(err));
+    }
+
+    esp_http_client_cleanup(client);
+}*/
+/* -----------------------------------------------------------
+- POST (Formato JSON)
+- --------------------------------------------------------- */
+
+static void http_measurement_post(float *pressure, float *temperature, float *humidity) {
+
+    char post_data[128];
+
+    snprintf(post_data, sizeof(post_data),
+             "{\"device_id\":\"" DEVICE_ID "\",\"temperature\":%.2f,\"pressure\":%.2f,\"humidity\":%.2f}",
+             *temperature, *pressure, *humidity);
+
+    ESP_LOGI(TAG, "POST %s", SERVER_URL);
+    ESP_LOGI(TAG, "POST_DATA %s", post_data);
+
+    esp_http_client_config_t config = {
+        .url = SERVER_URL,
+        .event_handler = http_event_handler,
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    esp_http_client_set_method(client, HTTP_METHOD_POST);
+
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+
+    esp_http_client_set_post_field(client, post_data, strlen(post_data));
+
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "POST status = %d", esp_http_client_get_status_code(client));
+    } else {
+        ESP_LOGE(TAG, "POST failed: %s", esp_err_to_name(err));
     }
 
     esp_http_client_cleanup(client);

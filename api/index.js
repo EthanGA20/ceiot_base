@@ -2,7 +2,7 @@ import express from "express";
 import { urlencoded } from "body-parser";
 import { MongoClient } from "mongodb";
 import { newDb } from "pg-mem";
-import {devices} from './schema.js'
+import {devices, measurements} from './schema.js'
 import {db} from './db.js';
 //const db = newDb();
 
@@ -62,10 +62,16 @@ let measurement = [
 ]
 
 
-app.post('/measurement', function (req, res) {
--       console.log("device id    : " + req.body.id + " key         : " + req.body.key + " temperature : " + req.body.t + " humidity    : " + req.body.h);	
-    const {insertedId} = insertMeasurement({id:req.body.id, t:req.body.t, h:req.body.h});
-	res.send("received measurement into " +  insertedId);
+app.post('/measurement', async (req, res) => {
+    const{device_id, temperature, pressure, humidity} = req.body;
+    if(!device_id || !temperature || !pressure){
+        return res.status(400).json({error: "Missing fields"});
+    }
+    const [newMeasure] = await db.insert(measurements).values({device_id, temperature, pressure, humidity}).returning();
+    res.status(200).json(newMeasure);
+    //console.log("device id    : " + req.body.id + " key         : " + req.body.key + " temperature : " + req.body.t + " humidity    : " + req.body.h);	
+    //const {insertedId} = insertMeasurement({id:req.body.id, t:req.body.t, h:req.body.h});
+	//res.send("received measurement into " +  insertedId);
 });
 
 app.post('/device', async (req, res) => {
@@ -159,7 +165,22 @@ app.get('/term/device/:id', function (req, res) {
 });
 
 app.get('/measurement', async (req,res) => {
-    res.json(measurement);
+    try {
+    const data = await db.select().from(measurements);
+
+    return res.status(200).json({
+      success: true,
+      count: data.length,
+      measurements: data
+    });
+  } catch (error) {
+    console.error('Error al obtener las mediciones:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener las mediciones'
+    });
+  }
 });
 
 app.get('/device', async function(req,res) {
