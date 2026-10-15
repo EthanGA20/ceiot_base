@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Mediciones del dispositivo</title>
+
+  <link
+    type="text/css"
+    rel="stylesheet"
+    href="css/materialize.min.css"
+  >
+</head>
+
+<body>
+  <nav style="background-color: #124580">
+    <div class="nav-wrapper">
+      <a href="index.html" class="brand-logo left"
+         style="margin-left: 15px">
+        Small IoT System
+      </a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h4>Mediciones del dispositivo</h4>
+
+    <p id="deviceInfo"></p>
+
+    <table class="striped responsive-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Temperatura</th>
+          <th>Presión</th>
+          <th>Humedad</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+
+      <tbody id="measurementsList"></tbody>
+    </table>
+
+    <p id="message"></p>
+
+    <a href="index.html" class="waves-effect waves-light btn">
+      Volver a dispositivos
+    </a>
+  </div>
+
+  <script type="module" src="/js/Measurements.js"></script>
+</body>
+</html>

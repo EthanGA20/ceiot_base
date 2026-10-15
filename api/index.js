@@ -4,7 +4,7 @@ import { MongoClient } from "mongodb";
 import { newDb } from "pg-mem";
 import {devices, measurements} from './schema.js'
 import {db} from './db.js';
-//const db = newDb();
+import { desc, eq } from 'drizzle-orm';
 
     import render from "./render.js";
 // Measurements database setup and access
@@ -28,10 +28,6 @@ async function insertMeasurement(message) {
     return insertedId;
 }
 
-/*async function getMeasurements() {
-    return await database.collection(collectionName).find({}).toArray();	
-}
-    */
 
 // API Server
 
@@ -39,11 +35,12 @@ const app = express();
 
 app.use(urlencoded({extended:false}));
 
-//app.use('spa/static');
+
 app.use(express.static('spa/static'));
 
 app.use(express.json());
 
+//Metodo para imprimir en consola donde nos encontramos y que peticiones ejecutamos
 app.use((req, res, next) => {
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] ${req.method} ${req.url}`)
@@ -52,14 +49,7 @@ app.use((req, res, next) => {
 
 const PORT = 8080;
 
-const router = express.Router();
-
-let measurement = [
-    {id:'00', t:'18', h:'78'},
-    {id:'00', t:'19', h:'77'},
-    {id:'00', t:'77', h:'77'},
-    {id:'01', t:'77', h:'77'}
-]
+//const router = express.Router();
 
 
 app.post('/measurement', async (req, res) => {
@@ -84,25 +74,6 @@ app.post('/device', async (req, res) => {
     res.status(200).json(newDevice);
 });
 
-
-/*app.get('/web/device', function (req, res) {
-    const result = db.select().from(devices).map( function(device) {
-	//const devices = db.public.many("SELECT * FROM devices").map( function(device) {
-		console.log(result);
-		return '<tr><td><a href=/web/device/'+ device.device_id +'>' + device.device_id + "</a>" +
-			       "</td><td>"+ device.name+"</td><td>"+ device.key+"</td></tr>";
-	   }
-	);
-	res.send("<html>"+
-		     "<head><title>Sensores</title></head>" +
-		     "<body>" +
-		        "<table border=\"1\">" +
-		           "<tr><th>id</th><th>name</th><th>key</th></tr>" +
-		           result +
-		        "</table>" +
-		     "</body>" +
-		"</html>");
-});*/
 app.get('/web/device', async function (req, res) {
     try {
         const devicesList = await db.select().from(devices);
@@ -183,35 +154,36 @@ app.get('/measurement', async (req,res) => {
   }
 });
 
+app.get('/measurement/:id', async (req, res) => {
+    const deviceId = Number(req.params.id); 
+    try {
+        const result = await db.select().from(measurements).where(eq(measurements.device_id, deviceId)).orderBy(desc(measurements.createdAt));
+
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error('Error al obtener las mediciones:', error);
+
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener las mediciones'
+        });
+    }
+});
+
 app.get('/device', async function(req,res) {
     const devicesList = await db.select().from(devices);
     res.send(devicesList);
 });
 
-/*startDatabase().then(async() => {
 
-    const addAdminEndpoint = require("./admin.js");
-    addAdminEndpoint(app, render);
-
-    await insertMeasurement({id:'00', t:'18', h:'78'});
-    await insertMeasurement({id:'00', t:'19', h:'77'});
-    await insertMeasurement({id:'00', t:'17', h:'77'});
-    await insertMeasurement({id:'01', t:'17', h:'77'});
-    console.log("mongo measurement database Up");
-
+/* Data pata tabla user y device
     db.public.none("CREATE TABLE devices (device_id VARCHAR, name VARCHAR, key VARCHAR)");
     db.public.none("INSERT INTO devices VALUES ('00', 'Fake Device 00', '123456')");
     db.public.none("INSERT INTO devices VALUES ('01', 'Fake Device 01', '234567')");
     db.public.none("CREATE TABLE users (user_id VARCHAR, name VARCHAR, key VARCHAR)");
     db.public.none("INSERT INTO users VALUES ('1','Ana','admin123')");
     db.public.none("INSERT INTO users VALUES ('2','Beto','user123')");
-
-    console.log("sql device database up");
-
-    app.listen(PORT, () => {
-        console.log(`Server is running on http://localhost:${PORT}`);
-    });
-});*/
+*/
 
 app.listen(PORT, () => {
         console.log(`Server is running on http://localhost:${PORT}`);
