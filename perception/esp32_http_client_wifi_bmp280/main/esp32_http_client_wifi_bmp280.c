@@ -360,7 +360,7 @@ void app_main(void)
     float pressure, temperature, humidity;
     while (1) { 
        bmp280_read(&dev, &pressure, &temperature, &humidity);
-       http_post(&pressure, &temperature, &humidity);
+       http_measurement_post(&pressure, &temperature, &humidity);
        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
