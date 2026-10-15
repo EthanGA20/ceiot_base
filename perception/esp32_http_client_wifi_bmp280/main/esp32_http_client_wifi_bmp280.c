@@ -51,7 +51,7 @@ void bmp280_test(bmp280_t *dev)
     printf("BMP280: found %s\n", bme280p ? "BME280" : "BMP280");
 }
 
-void bmp280_read(bmp280_t *dev, float *pressure, float *temperature, float *humidity) {
+/*void bmp280_read(bmp280_t *dev, float *pressure, float *temperature, float *humidity) {
 
     if (bmp280_read_float(dev, temperature, pressure, humidity) != ESP_OK) {
         printf("Temperature/pressure reading failed\n");
@@ -65,6 +65,22 @@ void bmp280_read(bmp280_t *dev, float *pressure, float *temperature, float *humi
         printf(", Humidity: %.2f\n", *humidity);
     else
         printf("\n");
+}*/
+void bmp280_read(bmp280_t *dev, float *pressure, float *temperature, float *humidity) {
+
+    if (bmp280_read_float(dev, temperature, pressure, humidity) != ESP_OK) {
+        ESP_LOGE(TAG, "Temperature/pressure reading failed");
+        return;
+    }
+
+    bool bme280p = dev->id == BME280_CHIP_ID;
+    if (bme280p) {
+        ESP_LOGI(TAG, "Sensor -> Pressure: %.2f Pa, Temp: %.2f C, Humidity: %.2f %%", 
+                 *pressure, *temperature, *humidity);
+    } else {
+        ESP_LOGI(TAG, "Sensor -> Pressure: %.2f Pa, Temp: %.2f C", 
+                 *pressure, *temperature);
+    }
 }
 
 
@@ -166,7 +182,7 @@ static void wifi_init(void)
  * HTTP event
  * --------------------------------------------------------- */
 
-static esp_err_t http_event_handler(
+/*static esp_err_t http_event_handler(
     esp_http_client_event_t *evt)
 {
     switch (evt->event_id) {
@@ -177,6 +193,21 @@ static esp_err_t http_event_handler(
                evt->data_len,
                (char *)evt->data);
 
+        break;
+
+    default:
+        break;
+    }
+
+    return ESP_OK;
+}*/
+static esp_err_t http_event_handler(esp_http_client_event_t *evt)
+{
+    switch (evt->event_id) {
+
+    case HTTP_EVENT_ON_DATA:
+
+        ESP_LOGI(TAG, "HTTP Response: %.*s", evt->data_len, (char *)evt->data);
         break;
 
     default:
