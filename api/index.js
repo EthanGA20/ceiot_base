@@ -104,7 +104,7 @@ app.get('/web/device', async function (req, res) {
         res.status(500).send("Error al consultar los dispositivos");
     }
 });
-
+/*
 app.get('/web/device/:id', function (req,res) {
     var template = "<html>"+
                      "<head><title>Sensor {{name}}</title></head>" +
@@ -120,7 +120,58 @@ app.get('/web/device/:id', function (req,res) {
     console.log(device);
     res.send(render(template,{id:device[0].device_id, key: device[0].key, name:device[0].name}));
 });	
+*/
+app.get('/web/device/:id', async function (req, res) {
+    const id = Number(req.params.id);
 
+    // Validar que el ID sea un número válido
+    if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).send('ID inválido');
+    }
+
+    const template =
+        "<html>" +
+        "<head><title>Sensor {{name}}</title></head>" +
+        "<body>" +
+        "<h1>{{name}}</h1>" +
+        "id: {{id}}<br/>" +
+        "Key: {{key}}<br/>" +
+        "Time: {{time}}" +
+        "</body>" +
+        "</html>";
+
+    try {
+        const result = await db.select().from(devices).where(eq(devices.device_id, id)).limit(1);
+
+        if (result.length === 0) {
+            return res.status(404).send('Dispositivo no encontrado');
+        }
+
+        const device = result[0];
+
+        res.send(render(template, {id: device.device_id, key: device.key, name: device.name, time: device.createdAt}));
+
+    } catch (error) {
+        console.error('Error al consultar el dispositivo:', error);
+        res.status(500).send('Error interno del servidor');
+    }
+});
+/*app.get('/web/device/:id', function (req,res) {
+    const id = Number(req.params.id)
+    var template = "<html>"+
+                     "<head><title>Sensor {{name}}</title></head>" +
+                     "<body>" +
+		        "<h1>{{ name }}</h1>"+
+		        "id  : {{ id }}<br/>" +
+		        "Key : {{ key }}" +
+                     "</body>" +
+                "</html>";
+
+    var device = db.select().from(devices).where(eq(devices.device_id, id));
+    //var device = db.public.many("SELECT * FROM devices WHERE device_id = '"+req.params.id+"'");
+    console.log(device);
+    res.send(render(template,{id:device[0].device_id, key: device[0].key, name:device[0].name}));
+});	*/
 
 app.get('/term/device/:id', function (req, res) {
     var red = "\x1b[31m";
