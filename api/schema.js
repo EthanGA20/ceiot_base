@@ -5,8 +5,8 @@ export const devices = pgTable('devices', {
   device_id: serial('id').primaryKey(),
   name: varchar('name', {length: 100}).notNull(),
   key: varchar('key', {length: 100}).notNull(),
-  createdAt: timestamp('createdAt').defaultNow()
-
+  createdAt: timestamp('createdAt').defaultNow(),
+  deletedAt: varchar('deletedAt', {length: 100})
 });
 
 export const users = pgTable('users', {

@@ -4,7 +4,7 @@ import { MongoClient } from "mongodb";
 import { newDb } from "pg-mem";
 import {devices, measurements} from './schema.js'
 import {db} from './db.js';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, isNotNull, isNull } from 'drizzle-orm';
 
     import render from "./render.js";
 // Measurements database setup and access
@@ -74,6 +74,30 @@ app.post('/device', async (req, res) => {
     res.status(200).json(newDevice);
 });
 
+app.delete('/device/:id', async(req, res) => {
+    const id = Number(req.params.id)
+    const time = new Date().toISOString();
+    if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).send('ID inválido');
+    }
+    try {
+        const result = await db.update(devices).set({ deletedAt : time }).where(eq(devices.device_id, id));
+        console.log(result);
+
+        if(result && result.rowCount > 0){
+            return res.status(204).send();
+
+        }else{
+            return res.status(404).send('Dispositivo no encontrado');
+
+        }
+        
+    } catch (error) {
+        console.error('Error al consultar el dispositivo:', error);
+        res.status(500).send('Error interno del servidor');
+    }
+})
+
 app.get('/web/device', async function (req, res) {
     try {
         const devicesList = await db.select().from(devices);
@@ -85,7 +109,8 @@ app.get('/web/device', async function (req, res) {
                 device.device_id + '</a>' +
                 '</td><td>' + device.name +
                 '</td><td>' + device.key + 
-                '</td><td>' + device.createdAt +'</td></tr>';
+                '</td><td>' + device.createdAt +
+                '</td><td>' + device.deletedAt + '</td></tr>';
         });
 
         res.send(
@@ -93,7 +118,7 @@ app.get('/web/device', async function (req, res) {
             "<head><title>Sensores</title></head>" +
             "<body>" +
             "<table border=\"1\">" +
-            "<tr><th>id</th><th>name</th><th>key</th><th>createdAt</th></tr>" +
+            "<tr><th>id</th><th>name</th><th>key</th><th>createdAt</th><th>deletedAt</th></tr>" +
             result.join('') +
             "</table>" +
             "</body>" +
@@ -104,27 +129,10 @@ app.get('/web/device', async function (req, res) {
         res.status(500).send("Error al consultar los dispositivos");
     }
 });
-/*
-app.get('/web/device/:id', function (req,res) {
-    var template = "<html>"+
-                     "<head><title>Sensor {{name}}</title></head>" +
-                     "<body>" +
-		        "<h1>{{ name }}</h1>"+
-		        "id  : {{ id }}<br/>" +
-		        "Key : {{ key }}" +
-                     "</body>" +
-                "</html>";
 
-
-    var device = db.public.many("SELECT * FROM devices WHERE device_id = '"+req.params.id+"'");
-    console.log(device);
-    res.send(render(template,{id:device[0].device_id, key: device[0].key, name:device[0].name}));
-});	
-*/
 app.get('/web/device/:id', async function (req, res) {
     const id = Number(req.params.id);
 
-    // Validar que el ID sea un número válido
     if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).send('ID inválido');
     }
@@ -156,22 +164,6 @@ app.get('/web/device/:id', async function (req, res) {
         res.status(500).send('Error interno del servidor');
     }
 });
-/*app.get('/web/device/:id', function (req,res) {
-    const id = Number(req.params.id)
-    var template = "<html>"+
-                     "<head><title>Sensor {{name}}</title></head>" +
-                     "<body>" +
-		        "<h1>{{ name }}</h1>"+
-		        "id  : {{ id }}<br/>" +
-		        "Key : {{ key }}" +
-                     "</body>" +
-                "</html>";
-
-    var device = db.select().from(devices).where(eq(devices.device_id, id));
-    //var device = db.public.many("SELECT * FROM devices WHERE device_id = '"+req.params.id+"'");
-    console.log(device);
-    res.send(render(template,{id:device[0].device_id, key: device[0].key, name:device[0].name}));
-});	*/
 
 app.get('/term/device/:id', function (req, res) {
     var red = "\x1b[31m";
@@ -222,7 +214,7 @@ app.get('/measurement/:id', async (req, res) => {
 });
 
 app.get('/device', async function(req,res) {
-    const devicesList = await db.select().from(devices);
+    const devicesList = await db.select().from(devices).where(isNull(devices.deletedAt));
     res.send(devicesList);
 });
 

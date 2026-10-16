@@ -3,10 +3,7 @@ export interface GETResponseListener {
 }
 
 export interface DELETEResponseListener {
-  handleDELETEResponse(
-    status: number,
-    response: string | null
-  ): void;
+  handleDELETEResponse(status: number,response: string | null): void;
 }
 
 export class API {
@@ -27,19 +24,14 @@ export class API {
     xhr.send();
   }
 
-  requestDELETE(
-    url: string,
-    listener: DELETEResponseListener
-  ): void {
+  requestDELETE(url: string, listener: DELETEResponseListener): void {
     const xhr = new XMLHttpRequest();
 
     xhr.onreadystatechange = function () {
       if (xhr.readyState === 4) {
         listener.handleDELETEResponse(
           xhr.status,
-          xhr.status >= 200 && xhr.status < 300
-            ? xhr.responseText
-            : null
+          xhr.status >= 200 && xhr.status < 300 ? xhr.responseText : null
         );
       }
     };
